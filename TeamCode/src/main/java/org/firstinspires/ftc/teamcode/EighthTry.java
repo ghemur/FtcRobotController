@@ -3,14 +3,16 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /**
- * SeventhTry uses gamePad1 for controlling the wheels and gamePad2 to control arm and servo.
+ * EighthTry uses gamePad1 for controlling the wheels.
+ * The control arm and servo are controlled by gamePad2 if available, else by gamePad1.
  */
 @TeleOp
-public class SeventhTry extends LinearOpMode {
+public class EighthTry extends LinearOpMode {
 
     private static final double MAX_POWER = 1.0;
     private static final double ZERO_POWER = 0;
@@ -55,27 +57,42 @@ public class SeventhTry extends LinearOpMode {
         }
     }
 
+    private Gamepad getWheelGamePad() {
+        return gamepad1;
+    }
+
+    private Gamepad getArmGamePad() {
+        return gamepad2 != null ? gamepad2 : gamepad1;
+    }
+
+    private Gamepad getServoGamePad() {
+        return gamepad2 != null ? gamepad2 : gamepad1;
+    }
+
     /**
      * Read joystick buttons, change params
      */
     private void updateParams() {
-        if (gamepad1.right_bumper) {
+        Gamepad wheelGamePad = getWheelGamePad();
+        if (wheelGamePad.right_bumper) {
             speedCoeff += POWER_STEP;
             if (speedCoeff > MAX_POWER) {
                 speedCoeff = MAX_POWER;
             }
-        } else if (gamepad1.left_bumper) {
+        } else if (wheelGamePad.left_bumper) {
             speedCoeff -= POWER_STEP;
             if (speedCoeff < ZERO_POWER) {
                 speedCoeff = ZERO_POWER;
             }
         }
-        if (gamepad2.right_bumper) {
+
+        Gamepad armGamePad = getArmGamePad();
+        if (armGamePad.right_bumper) {
             armPower += POWER_STEP;
             if (armPower > MAX_POWER) {
                 armPower = MAX_POWER;
             }
-        } else if (gamepad2.left_bumper) {
+        } else if (armGamePad.left_bumper) {
             armPower -= POWER_STEP;
             if (armPower < ZERO_POWER) {
                 armPower = ZERO_POWER;
@@ -92,9 +109,10 @@ public class SeventhTry extends LinearOpMode {
             telemetry.update();
             return;
         }
-        if (gamepad2.b) {
+        Gamepad armGamePad = getArmGamePad();
+        if (armGamePad.b) {
             armMotor.setPower(armPower);
-        } else if (gamepad2.a) {
+        } else if (armGamePad.a) {
             armMotor.setPower(-armPower);
         } else {
             armMotor.setPower(0);
@@ -107,7 +125,8 @@ public class SeventhTry extends LinearOpMode {
      * Rotate hand
      */
     private void moveServo() {
-        float push = gamepad2.right_trigger;
+        Gamepad servoGamePad = getServoGamePad();
+        float push = servoGamePad.right_trigger;
         servo.setPosition(push);
         telemetry.addData("Servo", "%4.2f", push);
         telemetry.update();
@@ -123,10 +142,11 @@ public class SeventhTry extends LinearOpMode {
      * - leftBack, rightFront: fwdSpeed and sideSpeed have same signs
      */
     private void moveWheels() {
+        Gamepad wheelGamePad = getWheelGamePad();
         // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-        double axial = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-        double lateral = gamepad1.left_stick_x;
-        double yaw = gamepad1.right_stick_x;
+        double axial = -wheelGamePad.left_stick_y;  // Note: pushing stick forward gives negative value
+        double lateral = wheelGamePad.left_stick_x;
+        double yaw = wheelGamePad.right_stick_x;
 
         // Combine the joystick requests for each axis-motion to determine each wheel's power.
         // Set up a variable for each drive wheel to save the power level for telemetry.
